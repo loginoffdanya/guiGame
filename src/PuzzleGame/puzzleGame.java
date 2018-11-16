@@ -1,9 +1,8 @@
 package PuzzleGame;
 
-import com.sun.xml.internal.messaging.saaj.soap.JpegDataContentHandler;
-
 import javax.imageio.ImageIO;
 import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
@@ -15,11 +14,11 @@ public class puzzleGame {
 
     JFrame frame = new JFrame("Puzzle by Dani4");
     MyButton[][] buttons = new MyButton[4][5];
-    JPanel panel = new JPanel(new GridLayout(4,5,2,2));
+    JPanel panel = new JPanel(new GridLayout(4,5,0,0));
     MyButton hiddenBtn;
-    //String path = new String("C:\\Users\\loginov_dv\\IdeaProjects\\guiGame\\res");
-
     BufferedImage image = null;
+
+    String path = new String("src/test.jpg");
 
     public static void main(String[] args) {
         puzzleGame game = new puzzleGame();
@@ -27,8 +26,21 @@ public class puzzleGame {
     }
 
     private void go() {
+        // Set up WindowsLookAndFeel style for GUI
+        try {
+            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
+             /*   if ("Nimbus".equals(info.getName())) {
+                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
+                    break;
+                }*/
+             UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
+            }
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | javax.swing.UnsupportedLookAndFeelException ex) {
+            java.util.logging.Logger.getLogger(JFrame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        }
+        //Launching frames
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setBounds(100,100,550,456);
+        frame.setBounds(100,100,540,476);
         frame.setResizable(false);
 
         createMenu();
@@ -47,7 +59,7 @@ public class puzzleGame {
             item.addActionListener(new MyMenuListener());
             fileMenu.add(item);
         }
-        fileMenu.insertSeparator(1);
+        fileMenu.insertSeparator(3);
         menu.add(fileMenu);
         frame.setJMenuBar(menu);
     }
@@ -66,16 +78,16 @@ public class puzzleGame {
             int col = getHBColumn();
             if(row!=-1 && col!=-1) {
                 if (moveableBtn(btn, row, col)) {
-                    change(btn, row, col);
+                    change(btn);
+                    if(checkWin()){
+                        JOptionPane.showMessageDialog(null, "YOU WIN!", "Congratulations", JOptionPane.INFORMATION_MESSAGE);
+                    }
                 }
-            }
-            if(checkWin()){
-                JOptionPane.showMessageDialog(null, "YOU WIN!", "Congratulations", JOptionPane.INFORMATION_MESSAGE);
             }
         }
     }
 
-    private void change(MyButton button,int row,int col) {
+    private void change(MyButton button) {
         int tmp = button.value;
         button.value = hiddenBtn.value;
         hiddenBtn.value = tmp;
@@ -98,25 +110,17 @@ public class puzzleGame {
     }
 
     private boolean moveableBtn(MyButton button,int row, int col) {
-        if (row-1>=0){
-            if(button.equals(buttons[row-1][col])){
-                return true;
-            }
+        if (row-1>=0 && button.equals(buttons[row-1][col])){
+            return true;
         }
-        if (row+1<4){
-            if(button.equals(buttons[row+1][col])){
-                return true;
-            }
+        if (row+1<4 && button.equals(buttons[row+1][col])){
+            return true;
         }
-        if (col-1>=0){
-            if(button.equals(buttons[row][col-1])){
-                return true;
-            }
+        if (col-1>=0 && button.equals(buttons[row][col-1])){
+            return true;
         }
-        if (col+1<5){
-            if(button.equals(buttons[row][col+1])){
-                return true;
-            }
+        if (col+1<5 && button.equals(buttons[row][col+1])){
+            return true;
         }
         return false;
     }
@@ -156,10 +160,15 @@ public class puzzleGame {
                 generate();
             }
             if (cmd.equals("shuffle")){
-                shuffle();
+                try{
+                    shuffle();
+                } catch (NullPointerException ex){
+                    JOptionPane.showMessageDialog(null, "Error! Nothing to shuffle", "Alert Message", JOptionPane.INFORMATION_MESSAGE);
+                }
             }
             if (cmd.equals("load")){
-                JOptionPane.showMessageDialog(null, "Not avaliable for now!=(", "Testing", JOptionPane.INFORMATION_MESSAGE);
+                getPuzzle();
+                //JOptionPane.showMessageDialog(null, "Not avaliable for now!=(", "Testing", JOptionPane.INFORMATION_MESSAGE);
             }
         }
     }
@@ -179,7 +188,7 @@ public class puzzleGame {
             for (int i = 0; i < 4; i++){
                 for (int j = 0; j < 5; j++) {
                     if (v==buttons[i][j].value){
-                        change(buttons[i][j],getHBRow(),getHBColumn());
+                        change(buttons[i][j]);
                         found = true;
                         break;
                     }
@@ -198,39 +207,64 @@ public class puzzleGame {
             this.value = value;
         }
     }
+
+    private void getPuzzle() {
+        try {
+            JFileChooser chooser = new JFileChooser();
+            FileNameExtensionFilter imageFilter = new FileNameExtensionFilter("Images(*.jpg)","jpg");
+            chooser.setAcceptAllFileFilterUsed(false);
+            chooser.setFileFilter(imageFilter);
+            int res = chooser.showDialog(null, "Open image");
+            if (res == JFileChooser.APPROVE_OPTION){
+                path = chooser.getSelectedFile().getAbsolutePath();
+                generate();
+            }
+
+        }catch (Exception io){
+            JOptionPane.showMessageDialog(null,io);
+        }
+    }
     private void generate() {
         panel.removeAll();
-        BufferedImage subImage = null;
+        frame.repaint();
+        BufferedImage subImage;
         try{
-            image = readGameImage("test.jpg");
+            if(image == null){
+                InputStream in = getClass().getResourceAsStream("/test.jpg");
+                image = ImageIO.read(in);
+            }else {
+                image = readGameImage(path);
+            }
+            for (int i = 0; i < 4; i++){
+                for (int j = 0; j < 5; j++){
+                    // ""+((i*5)+(j+1))
+                    subImage = image.getSubimage(j*100,i*100,100,100);
+                    buttons[i][j] = new MyButton(new ImageIcon(subImage),(i*5)+(j+1));
+                    buttons[i][j].addActionListener(new ButtonActionListener());
+                    panel.add(buttons[i][j]);
+                }
+            }
+            hiddenBtn = buttons[3][4];
+            hiddenBtn.setVisible(false);
         } catch (Exception e){
-            JOptionPane.showMessageDialog(null, "Error!", "Testing", JOptionPane.INFORMATION_MESSAGE);;
+            JOptionPane.showMessageDialog(null, "Error!", "Testing", JOptionPane.INFORMATION_MESSAGE);
         }
-        for (int i = 0; i < 4; i++){
-            for (int j = 0; j < 5; j++){
-                // ""+((i*5)+(j+1))
-                subImage = image.getSubimage(j*100,i*100,100,100);
-                buttons[i][j] = new MyButton(new ImageIcon(subImage),(i*5)+(j+1));
-                buttons[i][j].addActionListener(new ButtonActionListener());
-                panel.add(buttons[i][j]);
-            }
-        }
-        hiddenBtn = buttons[3][4];
-        hiddenBtn.setVisible(false);
+
     }
-    private static BufferedImage readGameImage(String imagePath) throws IOException {
-        InputStream is = null;
-        try {
-            is = puzzleGame.class.getClassLoader().getResourceAsStream(imagePath);
-            // an example of how null checks can easily be forgotten
-            if (is == null) {
-                throw new FileNotFoundException("Resource not found: " + imagePath);
-            }
-            return ImageIO.read(is);
-        } finally {
-            if (is != null) {
-                is.close();
-            }
+    private BufferedImage readGameImage(String imagePath) throws IOException {
+        BufferedImage bufferedImage = ImageIO.read(new File(imagePath));
+
+        return createResizedCopy(bufferedImage,500,400,false);
+    }
+    private BufferedImage createResizedCopy(Image originalImage, int scaledWidth, int scaledHeight, boolean preserveAlpha) {
+        int imageType = preserveAlpha ? BufferedImage.TYPE_INT_RGB : BufferedImage.TYPE_INT_ARGB;
+        BufferedImage scaledBI = new BufferedImage(scaledWidth, scaledHeight, imageType);
+        Graphics2D g = scaledBI.createGraphics();
+        if (preserveAlpha) {
+            g.setComposite(AlphaComposite.Src);
         }
+        g.drawImage(originalImage, 0, 0, scaledWidth, scaledHeight, null);
+        g.dispose();
+        return scaledBI;
     }
 }
