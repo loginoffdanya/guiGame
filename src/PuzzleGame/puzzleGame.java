@@ -1,12 +1,13 @@
 package PuzzleGame;
 
-import javax.imageio.ImageIO;
+import javax.imageio.*;
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 
@@ -21,6 +22,11 @@ public class puzzleGame {
     String path = new String("src/test.jpg");
 
     public static void main(String[] args) {
+
+        // Set proxy on workspace
+        //System.setProperty("https.proxyHost", "vmspbtmg.complete.ru");
+        //System.setProperty("https.proxyPort", "8080");
+
         puzzleGame game = new puzzleGame();
         game.go();
     }
@@ -44,6 +50,7 @@ public class puzzleGame {
         frame.setResizable(false);
 
         createMenu();
+        image = readGameImage(path);
         generate();
 
         frame.getContentPane().add(panel);
@@ -53,13 +60,14 @@ public class puzzleGame {
     private void createMenu() {
         JMenuBar menu = new JMenuBar();
         JMenu fileMenu = new JMenu("Menu");
-        for (String itemname: new String[] {"Restart","Shuffle","Load","Exit"}) {
+        for (String itemname: new String[] {"Restart","Shuffle","Browse","Load from URL","Exit"}) {
             JMenuItem item = new JMenuItem(itemname);
             item.setActionCommand(itemname.toLowerCase());
             item.addActionListener(new MyMenuListener());
             fileMenu.add(item);
         }
-        fileMenu.insertSeparator(3);
+        fileMenu.insertSeparator(2);
+        fileMenu.insertSeparator(5);
         menu.add(fileMenu);
         frame.setJMenuBar(menu);
     }
@@ -166,9 +174,13 @@ public class puzzleGame {
                     JOptionPane.showMessageDialog(null, "Error! Nothing to shuffle", "Alert Message", JOptionPane.INFORMATION_MESSAGE);
                 }
             }
-            if (cmd.equals("load")){
+            if (cmd.equals("browse")){
                 getPuzzle();
                 //JOptionPane.showMessageDialog(null, "Not avaliable for now!=(", "Testing", JOptionPane.INFORMATION_MESSAGE);
+            }
+            if (cmd.equals("load from url")){
+                getPuzzleFromURL();
+                //JOptionPane.showMessageDialog(null, "Nice try!", "Alert Message", JOptionPane.INFORMATION_MESSAGE);
             }
         }
     }
@@ -217,6 +229,7 @@ public class puzzleGame {
             int res = chooser.showDialog(null, "Open image");
             if (res == JFileChooser.APPROVE_OPTION){
                 path = chooser.getSelectedFile().getAbsolutePath();
+                image = readGameImage(path);
                 generate();
             }
 
@@ -224,17 +237,37 @@ public class puzzleGame {
             JOptionPane.showMessageDialog(null,io);
         }
     }
+
+    private void getPuzzleFromURL() {
+        try {
+            //String FILE_URL = new String("https://bipbap.ru/wp-content/uploads/2017/10/0_8eb56_842bba74_XL-640x400.jpg");
+            String FILE_URL = (String)JOptionPane.showInputDialog(frame,
+                    "URL from internet:\n",
+                    "Browse Internet",
+                    JOptionPane.PLAIN_MESSAGE);
+            if ((FILE_URL != null) && (FILE_URL.length() > 0)) {
+                BufferedInputStream in = new BufferedInputStream(new URL(FILE_URL).openStream());
+                BufferedImage tmp = ImageIO.read(in);
+                image = createResizedCopy(tmp, 500, 400, false);
+                generate();
+                in.close();
+            }
+        } catch (Exception io){
+            JOptionPane.showMessageDialog(null,io);
+        }
+
+    }
+
     private void generate() {
         panel.removeAll();
         frame.repaint();
         BufferedImage subImage;
         try{
-            if(image == null){
-                InputStream in = getClass().getResourceAsStream("/test.jpg");
-                image = ImageIO.read(in);
-            }else {
-                image = readGameImage(path);
-            }
+            // if(image == null){
+            //   InputStream in = getClass().getResourceAsStream("/test.jpg");
+            //   image = ImageIO.read(in);
+            //  }else {
+            //  }
             for (int i = 0; i < 4; i++){
                 for (int j = 0; j < 5; j++){
                     // ""+((i*5)+(j+1))
@@ -251,9 +284,13 @@ public class puzzleGame {
         }
 
     }
-    private BufferedImage readGameImage(String imagePath) throws IOException {
-        BufferedImage bufferedImage = ImageIO.read(new File(imagePath));
-
+    private BufferedImage readGameImage(String imagePath){
+        BufferedImage bufferedImage = null;
+        try {
+            bufferedImage = ImageIO.read(new File(imagePath));
+        } catch (Exception io){
+            io.printStackTrace();
+        }
         return createResizedCopy(bufferedImage,500,400,false);
     }
     private BufferedImage createResizedCopy(Image originalImage, int scaledWidth, int scaledHeight, boolean preserveAlpha) {
