@@ -13,8 +13,8 @@ import java.util.Collections;
 
 public class puzzleGame {
 
-    final int xP = 8;
-    final int yP = 8;
+    final int xP = 16;
+    final int yP = 9;
 
     JFrame frame = new JFrame("Puzzle by Dani4");
     MyButton[][] buttons = new MyButton[yP][xP];
@@ -52,7 +52,7 @@ public class puzzleGame {
         // Launching frames
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         // TO DO
-        frame.setBounds(100,100,108*yP,(108*xP+42));
+        frame.setBounds(100,100,108*xP,(108*yP+42));
         frame.setResizable(false);
         createMenu();
 
