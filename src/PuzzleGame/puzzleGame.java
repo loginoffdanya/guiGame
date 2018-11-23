@@ -13,19 +13,24 @@ import java.util.Collections;
 
 public class puzzleGame {
 
+    final int xP = 8;
+    final int yP = 8;
+
     JFrame frame = new JFrame("Puzzle by Dani4");
-    MyButton[][] buttons = new MyButton[4][5];
-    JPanel panel = new JPanel(new GridLayout(4,5,0,0));
+    MyButton[][] buttons = new MyButton[yP][xP];
+    JPanel panel = new JPanel(new GridLayout(yP,xP,0,0));
     MyButton hiddenBtn;
     BufferedImage image = null;
 
-    String path = new String("src/test.jpg");
+    String path = "src/test.jpg";
 
     public static void main(String[] args) {
 
         // Set proxy on workspace
         //System.setProperty("https.proxyHost", "vmspbtmg.complete.ru");
         //System.setProperty("https.proxyPort", "8080");
+        //System.setProperty("http.proxyHost", "vmspbtmg.complete.ru");
+        //System.setProperty("http.proxyPort", "8080");
 
         puzzleGame game = new puzzleGame();
         game.go();
@@ -44,12 +49,14 @@ public class puzzleGame {
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | javax.swing.UnsupportedLookAndFeelException ex) {
             java.util.logging.Logger.getLogger(JFrame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
-        //Launching frames
+        // Launching frames
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setBounds(100,100,540,476);
+        // TO DO
+        frame.setBounds(100,100,108*yP,(108*xP+42));
         frame.setResizable(false);
-
         createMenu();
+
+        // Creating the game
         image = readGameImage(path);
         generate();
 
@@ -77,18 +84,13 @@ public class puzzleGame {
         @Override
         public void actionPerformed(ActionEvent e) {
             MyButton btn = (MyButton) e.getSource();
-            //Random color current button on click
-            //int r = (int) (Math.random()*255);
-            //int g = (int) (Math.random()*255);
-            //int b = (int) (Math.random()*255);
-            //btn.setBackground(new Color(r,g,b));
             int row = getHBRow();
             int col = getHBColumn();
             if(row!=-1 && col!=-1) {
                 if (moveableBtn(btn, row, col)) {
                     change(btn);
                     if(checkWin()){
-                        JOptionPane.showMessageDialog(null, "YOU WIN!", "Congratulations", JOptionPane.INFORMATION_MESSAGE);
+                        JOptionPane.showMessageDialog(frame, "YOU WIN!", "Congratulations", JOptionPane.INFORMATION_MESSAGE);
                     }
                 }
             }
@@ -107,9 +109,9 @@ public class puzzleGame {
     }
 
     private boolean checkWin() {
-        for (int i = 0; i < 4; i++) {
-            for (int j = 0; j < 5; j++) {
-                if(buttons[i][j].value != (i*5)+(j+1)){
+        for (int i = 0; i < yP; i++) {
+            for (int j = 0; j < xP; j++) {
+                if(buttons[i][j].value != (i*xP)+(j+1)){
                     return false;
                 }
             }
@@ -121,21 +123,21 @@ public class puzzleGame {
         if (row-1>=0 && button.equals(buttons[row-1][col])){
             return true;
         }
-        if (row+1<4 && button.equals(buttons[row+1][col])){
+        if (row+1<yP && button.equals(buttons[row+1][col])){
             return true;
         }
         if (col-1>=0 && button.equals(buttons[row][col-1])){
             return true;
         }
-        if (col+1<5 && button.equals(buttons[row][col+1])){
+        if (col+1<xP && button.equals(buttons[row][col+1])){
             return true;
         }
         return false;
     }
 
     private int getHBColumn() {
-        for (int i = 0; i < 4; i++) {
-            for (int j = 0; j < 5; j++) {
+        for (int i = 0; i < yP; i++) {
+            for (int j = 0; j < xP; j++) {
                 if(buttons[i][j].equals(hiddenBtn)){
                     return j;
                 }
@@ -145,8 +147,8 @@ public class puzzleGame {
     }
 
     private int getHBRow() {
-        for (int i = 0; i < 4; i++) {
-            for (int j = 0; j < 5; j++) {
+        for (int i = 0; i < yP; i++) {
+            for (int j = 0; j < xP; j++) {
                 if(buttons[i][j].equals(hiddenBtn)){
                     return i;
                 }
@@ -176,17 +178,15 @@ public class puzzleGame {
             }
             if (cmd.equals("browse")){
                 getPuzzle();
-                //JOptionPane.showMessageDialog(null, "Not avaliable for now!=(", "Testing", JOptionPane.INFORMATION_MESSAGE);
             }
             if (cmd.equals("load from url")){
                 getPuzzleFromURL();
-                //JOptionPane.showMessageDialog(null, "Nice try!", "Alert Message", JOptionPane.INFORMATION_MESSAGE);
             }
         }
     }
 
     private void shuffle() {
-        int size = 20;
+        int size = yP*xP;
         ArrayList<Integer> array = new ArrayList<>(size);
         for (int i = 1; i <= size; i++) {
             array.add(i);
@@ -197,8 +197,8 @@ public class puzzleGame {
         while (!array.isEmpty()) {
             int v = array.remove(array.size() - 1);
             boolean found = false;
-            for (int i = 0; i < 4; i++){
-                for (int j = 0; j < 5; j++) {
+            for (int i = 0; i < yP; i++){
+                for (int j = 0; j < xP; j++) {
                     if (v==buttons[i][j].value){
                         change(buttons[i][j]);
                         found = true;
@@ -212,7 +212,7 @@ public class puzzleGame {
     }
 
     public class MyButton extends JButton{
-        public int value = 0;
+        public int value;
 
         public MyButton(ImageIcon imageIcon,int value) {
             super(imageIcon);
@@ -226,13 +226,12 @@ public class puzzleGame {
             FileNameExtensionFilter imageFilter = new FileNameExtensionFilter("Images(*.jpg)","jpg");
             chooser.setAcceptAllFileFilterUsed(false);
             chooser.setFileFilter(imageFilter);
-            int res = chooser.showDialog(null, "Open image");
+            int res = chooser.showDialog(frame, "Open image");
             if (res == JFileChooser.APPROVE_OPTION){
                 path = chooser.getSelectedFile().getAbsolutePath();
                 image = readGameImage(path);
                 generate();
             }
-
         }catch (Exception io){
             JOptionPane.showMessageDialog(null,io);
         }
@@ -240,15 +239,14 @@ public class puzzleGame {
 
     private void getPuzzleFromURL() {
         try {
-            //String FILE_URL = new String("https://bipbap.ru/wp-content/uploads/2017/10/0_8eb56_842bba74_XL-640x400.jpg");
-            String FILE_URL = (String)JOptionPane.showInputDialog(frame,
+            String FILE_URL = JOptionPane.showInputDialog(frame,
                     "URL from internet:\n",
                     "Browse Internet",
                     JOptionPane.PLAIN_MESSAGE);
             if ((FILE_URL != null) && (FILE_URL.length() > 0)) {
                 BufferedInputStream in = new BufferedInputStream(new URL(FILE_URL).openStream());
                 BufferedImage tmp = ImageIO.read(in);
-                image = createResizedCopy(tmp, 500, 400, false);
+                image = createResizedCopy(tmp, xP*100, yP*100, false);
                 generate();
                 in.close();
             }
@@ -263,21 +261,16 @@ public class puzzleGame {
         frame.repaint();
         BufferedImage subImage;
         try{
-            // if(image == null){
-            //   InputStream in = getClass().getResourceAsStream("/test.jpg");
-            //   image = ImageIO.read(in);
-            //  }else {
-            //  }
-            for (int i = 0; i < 4; i++){
-                for (int j = 0; j < 5; j++){
+            for (int i = 0; i < yP; i++){
+                for (int j = 0; j < xP; j++){
                     // ""+((i*5)+(j+1))
                     subImage = image.getSubimage(j*100,i*100,100,100);
-                    buttons[i][j] = new MyButton(new ImageIcon(subImage),(i*5)+(j+1));
+                    buttons[i][j] = new MyButton(new ImageIcon(subImage),(i*xP)+(j+1));
                     buttons[i][j].addActionListener(new ButtonActionListener());
                     panel.add(buttons[i][j]);
                 }
             }
-            hiddenBtn = buttons[3][4];
+            hiddenBtn = buttons[yP-1][xP-1];
             hiddenBtn.setVisible(false);
         } catch (Exception e){
             JOptionPane.showMessageDialog(null, "Error!", "Testing", JOptionPane.INFORMATION_MESSAGE);
@@ -291,7 +284,7 @@ public class puzzleGame {
         } catch (Exception io){
             io.printStackTrace();
         }
-        return createResizedCopy(bufferedImage,500,400,false);
+        return createResizedCopy(bufferedImage,xP*100,yP*100,false);
     }
     private BufferedImage createResizedCopy(Image originalImage, int scaledWidth, int scaledHeight, boolean preserveAlpha) {
         int imageType = preserveAlpha ? BufferedImage.TYPE_INT_RGB : BufferedImage.TYPE_INT_ARGB;
